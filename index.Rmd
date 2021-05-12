@@ -1,0 +1,97 @@
+---
+title: "Blue Mitchell Discography Network"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    horizontal_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(visNetwork)
+library(readxl)
+library(RColorBrewer)
+
+## import data files
+
+links <- read_excel("Blue Mitchell Network.xlsx",sheet = "Edges") 
+
+#change source and target column headers to from and to 
+
+colnames(links) = c("from", "to")
+
+
+nodes <- read_excel("Blue Mitches Nodes.xlsx")
+
+# change nodes label column to id
+
+colnames(nodes)[1] = "id"
+
+#create ids for unique type and instrument values: used for colorizing nodes
+
+nodes <- transform(nodes,type.type=as.numeric(factor(type)))
+nodes <- transform(nodes,instrument.type=as.numeric(factor(instrument)))
+nodes$outdegree <- nodes$outdegree + 1
+colnames(nodes)[7] = "role"
+
+```
+
+
+
+
+```{r}
+## Change node properties
+
+vis.nodes <- nodes
+vis.links <- links
+
+#node properties
+
+vis.nodes$shape  <- c("square", "dot", "triangle")[nodes$type.type] 
+vis.nodes$shadow <- TRUE # Nodes will drop shadow
+vis.nodes$title  <- vis.nodes$id # Text on click
+#vis.nodes$label  <- vis.nodes$instrument # Node label
+vis.nodes$size   <- (vis.nodes$outdegree + 5) * 2# Node size
+vis.nodes$borderWidth <- 2 # Node border with
+
+#album = reds
+#rythm section = greens
+#horns = yellows
+#else = blues
+#producer = purple
+
+vis.nodes$color.background <- c("#8A2BE2",
+                                "#00BFFF",
+                                "#7FFF00")[nodes$type.type]
+vis.nodes$color.border <- "grey"
+vis.nodes$color.highlight.background <- "orange"
+vis.nodes$color.highlight.border <- "darkred"
+
+#link properties
+
+#vis.links$arrows <- "to" # arrows: 'from', 'to', or 'middle'
+vis.links$smooth <- TRUE    # should the edges be curved?
+vis.links$shadow <- TRUE    # edge shadow
+
+#drop menus
+
+
+
+#layout
+
+#title, subtitle, footer, size
+
+graph <- visNetwork(vis.nodes, vis.links, background="#F5F5F5",
+                    main="Blue Mitchell Discography", submain="Network of Muscians, Producers, and Albums")%>%
+  visLayout(improvedLayout = TRUE)
+
+visOptions(graph, highlightNearest = list(enabled = TRUE, hover = TRUE), selectedBy = "role",
+           nodesIdSelection = TRUE)
+
+
+
+
+```
+
+
